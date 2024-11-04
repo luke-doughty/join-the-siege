@@ -1,0 +1,19 @@
+name: Build and Publish image to Docker Hub
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  publish_images:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: build image
+      run: |
+        docker build . -t luke-doughty/heron-data-classifier:latest
+    - name: push image to docker hub
+      run: |
+        docker login -u luke98doughty -p ${{ secrets.DOCKER_HUB_TOKEN }}
+        docker push luke-doughty/heron-data-classifier:latest
