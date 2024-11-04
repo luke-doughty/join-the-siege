@@ -2,7 +2,7 @@ name: Build and Publish image to Docker Hub
 on:
   push:
     branches:
-    - main
+      - main
 
 jobs:
   publish_images:
@@ -12,8 +12,8 @@ jobs:
       uses: actions/checkout@v4
     - name: build image
       run: |
-        docker build . -t luke-doughty/heron-data-classifier:latest
+        docker build . -t luke98doughty/heron-data-code-test:tagname
     - name: push image to docker hub
       run: |
         docker login -u luke98doughty -p ${{ secrets.DOCKER_HUB_TOKEN }}
-        docker push luke-doughty/heron-data-classifier:latest
+        docker push luke98doughty/heron-data-code-test:tagname
