@@ -1,5 +1,31 @@
 # Heron Coding Challenge - File Classifier - Luke Doughty Submission
 
+## About this code
+
+This code fundamentally revolves around the Hugging Face [Text Inference](https://huggingface.co/docs/transformers/v4.46.2/en/main_classes/pipelines#transformers.TextClassificationPipeline) and [Image Inference](https://huggingface.co/docs/transformers/v4.46.2/en/main_classes/pipelines#transformers.ZeroShotImageClassificationPipeline) to determine a files classification.
+
+I have worked on the basis that file names _should_ be treated primarily as correct over file contents, but also because of this, they are judged more strictly. Below is the classification path of the two file types, in descending priority:
+
+# Image:
+
+1. Compare file name against latest (Bart)[https://huggingface.co/facebook/bart-large-mnli] model
+
+2. Compare image content against the latest (SigLIP)[https://huggingface.co/google/siglip-so400m-patch14-384] model
+
+3. If file name passes the failsafe value, use this
+
+4. Return Classification Unknown
+
+# File:
+
+1. Compare file name against latest (Bart)[https://huggingface.co/facebook/bart-large-mnli] model
+
+2. Compare file content against latest (Bart)[https://huggingface.co/facebook/bart-large-mnli] model
+
+3. Take the highest of the two that pass the fail safe
+
+4. Return Classification Unknown
+
 ## Building an image
 
 To build an image run `docker build . -t ${IMAGE_NAME}` from the root directory. This is also ran automatically when merging a PR to to master, with the image being pushed to my docker hub registry.

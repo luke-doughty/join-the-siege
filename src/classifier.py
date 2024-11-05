@@ -1,7 +1,21 @@
 from werkzeug.datastructures import FileStorage
+from transformers import pipeline
+from PIL import Image
 
 import os
 import json
+
+# Definied Globally so model is only created on startup of each pod in a cluster
+text_classifier = pipeline("zero-shot-classification",
+                           model="facebook/bart-large-mnli")
+
+image_classifier = pipeline(
+    "zero-shot-image-classification", model="google/siglip-so400m-patch14-384")
+
+IMAGE_PASS_RATE = 0.8
+FIRST_ATTEMPT_TEXT_PASS_RATE = 0.95
+FILE_CONTENT_PASS_RATE = 0.8
+TEXT_FAIL_SAFE_PASS_RATE = 0.6
 
 
 def get_catagories() -> list[str]:
@@ -19,39 +33,55 @@ def get_catagories() -> list[str]:
             raise ValueError(f"File '{categories_file}' unreadable")
 
 
-def classify_file(file: FileStorage, is_image: bool):
+def classify_file(file: FileStorage, is_image: bool) -> str:
     """Return the file classification
 
-    Takes in a file and uses hugging face inference on the file
+    Takes in a file and uses two different hugging face inferences on it.
+
+    - Image: use image classifier, if fails, use text classifier on file name
+
+    - Text File: use text classifer on filename, if fails, uses same classifer on contents and choses the highest result
     """
     catagories = get_catagories()
     filename = file.filename.lower()
 
+    filename_result = classify_plain_text(filename, catagories)
+    if (filename_result[1] > FIRST_ATTEMPT_TEXT_PASS_RATE or is_image):
+        return filename_result[0]
+
     if (is_image):
-        # parse file_name into classifier image classifier
-        return
-    if (not is_image):
-        # parse file_name into string classifer
-        return
-    file_contents = file.stream.read()
+        image_results = classify_image(file, catagories)
+        if (image_results[1] > IMAGE_PASS_RATE):
+            return image_results[0]
+        if filename_result[1] > TEXT_FAIL_SAFE_PASS_RATE:
+            return filename_result[0]
+        return "unknown file"
 
-    if "drivers_license" in filename:
-        return "drivers_licence"
+    file_contents = file.stream.read().decode()
+    file_contents_result = classify_plain_text(file_contents, catagories)
 
-    if "bank_statement" in filename:
-        return "bank_statement"
+    if (file_contents_result[1] > FIRST_ATTEMPT_TEXT_PASS_RATE):
+        return file_contents_result[0]
 
-    if "invoice" in filename:
-        return "invoice"
+    if (file_contents_result[1] > filename_result[1] and file_contents_result[1] > TEXT_FAIL_SAFE_PASS_RATE):
+        return file_contents_result[1]
+
+    if (filename_result[1] > file_contents_result[1] and filename_result[1] > TEXT_FAIL_SAFE_PASS_RATE):
+        return filename_result[1]
 
     return "unknown file"
 
-# TODO:
-# if an image or a video, only use file name - write why ive done this
-# (training an image document classifier beyond this scope)
-# otherwise parse a document (define a list of document types allowed)
-# use zero shot document classifier on documents
-# use zero shot on document name aswell, assume document name overrides inner document
-# potentially make an endpoint that can accuracy aswell
-# make more tests
-#
+
+def classify_plain_text(filename: str, labels: list[str]) -> tuple[str, int]:
+    '''Returns [classname, confidence] of the most confident response
+    '''
+    result = text_classifier(filename, candidate_labels=labels)
+    return [result['labels'][0], result['scores'][0]]
+
+
+def classify_image(image: FileStorage, labels: list[str]) -> tuple[str, int]:
+    '''Returns [classname, confidence] of the most confident response
+    '''
+    image_file = Image.open(image)
+    result = image_classifier(image_file, candidate_labels=labels)
+    return [result[0]['label'], result[0]['score']]
