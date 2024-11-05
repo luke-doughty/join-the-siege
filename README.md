@@ -4,7 +4,7 @@
 
 This code fundamentally revolves around the Hugging Face [Text Inference](https://huggingface.co/docs/transformers/v4.46.2/en/main_classes/pipelines#transformers.TextClassificationPipeline) and [Image Inference](https://huggingface.co/docs/transformers/v4.46.2/en/main_classes/pipelines#transformers.ZeroShotImageClassificationPipeline) to determine a files classification.
 
-I have worked on the basis that file names _should_ be treated primarily as correct over file contents, but also because of this, they are judged more strictly. Below is the classification path of the two file types, in descending priority:
+Below is the classification path of the two file types, in descending priority:
 
 # Image:
 
@@ -25,6 +25,14 @@ I have worked on the basis that file names _should_ be treated primarily as corr
 3. Take the highest of the two that pass the fail safe
 
 4. Return Classification Unknown
+
+# Assumptions
+
+I have worked on the basis that file names _should_ be treated primarily as correct over file contents, but also because of this, they are judged more strictly.
+
+I have also developed this with thought that it would be scaled up across multiple pods in a kubernetes cluster, meaning it could handle as many requests concurrently as there are pods. This also allows for the use of larger language and image inference models that have been used here.
+
+For deployment in a smaller environement or on a limited capability dev machine, I would recommend using the (Base SigLIP)[https://huggingface.co/google/siglip-base-patch16-224] model for image inference and (Base Bart)[https://huggingface.co/facebook/bart-base] for text inference. Be aware though, this will produce different results, and pass rates would need to be adjusted accordingly.
 
 ## Building an image
 
