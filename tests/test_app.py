@@ -2,8 +2,8 @@ from io import BytesIO
 from werkzeug.datastructures import FileStorage
 
 import pytest
-from src.app import app, allowed_file
-from src.classifier import filename_classifier
+from src.app import app
+from src.classifier import classify_image, classify_plain_text
 
 
 @pytest.fixture
@@ -14,17 +14,14 @@ def client():
 
 
 @pytest.mark.parametrize("filename, expected", [
-    ("file.pdf", True),
     ("file.png", True),
     ("file.jpg", True),
     ("file.txt", False),
     ("file", False),
+    ("../files/bank_statement.pdf", True),
+    ("../files/drivers_license_1.jpg", True)
 ])
-def test_allowed_file(filename, expected):
-    assert allowed_file(filename) == expected
-
-
-def test_no_file_in_request(client):
+def test_no_file_in_request(client, filename, expected):
     response = client.post('/classify_file')
     assert response.status_code == 400
 
@@ -47,13 +44,15 @@ def test_success(client, mocker):
 
 
 def test_filename_classifier():
-    classification = filename_classifier("bank_statement.jpg")
-    assert classification == "bank_statement"
+    classification = classify_plain_text(
+        "../files/bank_statement.pdf", labels=["bank_statement", "invoice"])
+    assert classification[0] == "bank_statement"
 
 
 def test_image_classifier():
-    image_file = None
-    with open('../files/drivers_license_1.jpg', 'r') as img:
-        image_file = FileStorage(img)
-    classification = filename_classifier(image_file)
-    assert classification == "drivers_license"
+    with open("files/drivers_license_1.jpg", 'rb') as img:
+        image_file = FileStorage(
+            img, filename="files/drivers_license_1.jpg", content_type="image/jpeg")
+        classification = classify_image(
+            image_file, labels=["drivers_license", "invoice"])
+    assert classification[0] == "drivers_license"

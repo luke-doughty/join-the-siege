@@ -1,14 +1,8 @@
-from cgi import FieldStorage
 from flask import Flask, request, jsonify
-from PIL import Image
 from src.classifier import classify_file
 from werkzeug.datastructures import FileStorage
 
 app = Flask(__name__)
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def is_image_type(file: FileStorage):

@@ -32,7 +32,7 @@ I have worked on the basis that file names _should_ be treated primarily as corr
 
 I have also developed this with thought that it would be scaled up across multiple pods in a kubernetes cluster, meaning it could handle as many requests concurrently as there are pods. This also allows for the use of larger language and image inference models that have been used here.
 
-For deployment in a smaller environement or on a limited capability dev machine, I would recommend using the (Base SigLIP)[https://huggingface.co/google/siglip-base-patch16-224] model for image inference and (Base Bart)[https://huggingface.co/facebook/bart-base] for text inference. Be aware though, this will produce different results, and pass rates would need to be adjusted accordingly.
+For deployment in a smaller environement or on a limited capability dev machine, I would recommend using the (Base SigLIP)[https://huggingface.co/google/siglip-base-patch16-224] model for image inference and (Base Bart)[https://huggingface.co/facebook/bart-base] for text inference. Be aware though, this will produce different results, and pass rates would need to be adjusted accordingly. If the machine this is being run on is using a GPU, this can be set in the pipeline setup in `classifier.py`.
 
 ## Building an image
 
