@@ -4,6 +4,10 @@
 
 This code fundamentally revolves around the Hugging Face [Text Inference](https://huggingface.co/docs/transformers/v4.46.2/en/main_classes/pipelines#transformers.TextClassificationPipeline) and [Image Inference](https://huggingface.co/docs/transformers/v4.46.2/en/main_classes/pipelines#transformers.ZeroShotImageClassificationPipeline) to determine a files classification.
 
+My solution tries to use the least amount of inference possible before having to use any more. As such I do a Zero Shot classification on the file name, as we should hope files are either named correctly, or randomly, not incorrectly (i.e a bank statement named `drivers_license.jpg`). If this doesnt meet the highest confidence threshold, we then go into two different classifiers depending on the file type with lower confidence thresholds.
+
+I use NLP inference at least once in each request as it allows for scalability with different industries and file types, instead of coding custom logic per new item accepted. This is a worthy trade off however, as loading the model weights is done on startup of the code, not per request, which in a kubernetes deployment would mean only on pod creation.
+
 Below is the classification path of the two file types, in descending priority:
 
 # Image:
